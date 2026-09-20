@@ -1,0 +1,27 @@
+# Build output
+bin/
+obj/
+
+# SQLite local DB
+*.db
+*.db-shm
+*.db-wal
+
+# Secrets - never commit
+.env
+.env*
+appsettings.json
+appsettings.Local.json
+
+# IDE
+.vscode/
+.idea/
+*.user
+*.suo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
