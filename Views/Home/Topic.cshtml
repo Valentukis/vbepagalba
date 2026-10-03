@@ -1,0 +1,68 @@
+@model VbeSort.Models.Topic
+@{
+    ViewData["Title"] = Model.Name;
+    var years = Model.Exercises.Select(e => e.Year).Distinct().OrderByDescending(y => y);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h2>Tema: @Model.Name</h2>
+        <a asp-action="Index" class="btn btn-sm btn-secondary">&larr; Atgal į temas</a>
+    </div>
+    <span class="badge bg-primary fs-6" id="countBadge">Rodoma: @Model.Exercises.Count užduočių</span>
+</div>
+
+@if (Model.Exercises.Any())
+{
+    <div class="card bg-light p-2 mb-3 shadow-sm">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <span class="fw-bold text-muted small">Filtras:</span>
+            <select id="yearFilter" class="form-select form-select-sm w-auto" onchange="filterEx()">
+                <option value="">Visi metai</option>
+                @foreach (var y in years) { <option value="@y">@y m.</option> }
+            </select>
+            <select id="sessionFilter" class="form-select form-select-sm w-auto" onchange="filterEx()">
+                <option value="">Visos sesijos</option>
+                <option value="pagr">Pagrindinė</option>
+                <option value="pak">Pakartotinė</option>
+            </select>
+        </div>
+    </div>
+
+    @foreach (var ex in Model.Exercises)
+    {
+        <div class="card mb-4 shadow-sm exercise-card" data-year="@ex.Year" data-session="@ex.Session">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <strong>@ex.Year - @(ex.Session == "pagr" ? "Pagr." : "Pak.") sesija</strong>
+                <span class="badge bg-info text-dark">Užduotis @ex.Number</span>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-2">
+                    @foreach (var q in ex.QuestionImages) { <img src="/@q" class="img-fluid mb-2 border rounded" style="max-height: 800px;" /> }
+                </div>
+                <button class="btn btn-outline-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#a-@ex.Id">Rodyti atsakymą</button>
+                <div class="collapse mt-2" id="a-@ex.Id">
+                    <div class="card card-body bg-light p-2">
+                        @if (ex.AnswerImages.Any()) {
+                            foreach (var a in ex.AnswerImages) { <img src="/@a" class="img-fluid border rounded mb-1" style="max-height: 800px;" /> }
+                        } else { <p class="text-danger mb-0 small">Atsakymas nerastas.</p> }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+@section Scripts {
+<script>
+    function filterEx() {
+        const y = document.getElementById('yearFilter').value, s = document.getElementById('sessionFilter').value;
+        let c = 0;
+        document.querySelectorAll('.exercise-card').forEach(el => {
+            const m = (!y || el.dataset.year === y) && (!s || el.dataset.session === s);
+            el.style.display = m ? '' : 'none';
+            if (m) c++;
+        });
+        document.getElementById('countBadge').textContent = `Rodoma: ${c} užduočių`;
+    }
+</script>
+}
