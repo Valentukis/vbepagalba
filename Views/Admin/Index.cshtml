@@ -1,0 +1,59 @@
+@model List<VbeSort.Models.User>
+@{
+    ViewData["Title"] = "Administravimas";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Paskyrų valdymas</h3>
+    <span class="badge bg-primary">Viso: @Model.Count</span>
+</div>
+
+@if (TempData["Success"] != null) { <div class="alert alert-success py-2">@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="alert alert-danger py-2">@TempData["Error"]</div> }
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white py-2"><h6 class="mb-0">Vartotojų sąrašas</h6></div>
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light"><tr><th>ID</th><th>Vardas</th><th>Rolė</th><th>Sukurta</th><th class="text-end">Veiksmai</th></tr></thead>
+                <tbody>
+                    @foreach (var u in Model)
+                    {
+                        <tr>
+                            <td>@u.Id</td><td><strong>@u.Username</strong></td>
+                            <td><span class="badge @(u.Role == "Admin" ? "bg-danger" : "bg-info text-dark")">@(u.Role == "Admin" ? "Admin" : "Mokinys")</span></td>
+                            <td class="text-muted">@u.CreatedAt.ToString("yyyy-MM-dd")</td>
+                            <td class="text-end">
+                                @if (!u.Username.Equals(User.Identity?.Name, StringComparison.OrdinalIgnoreCase)) {
+                                    <form asp-action="Delete" asp-route-id="@u.Id" method="post" class="d-inline" onsubmit="return confirm('Trinti vartotoją?');">
+                                        @Html.AntiForgeryToken()<button class="btn btn-sm btn-outline-danger py-0">Trinti</button>
+                                    </form>
+                                } else { <span class="badge bg-secondary">Jūs</span> }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white py-2"><h6 class="mb-0">Pridėti mokinį</h6></div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-2"><label class="form-label small mb-1">Prisijungimo vardas</label><input name="Username" class="form-control form-control-sm" required minlength="3" /></div>
+                    <div class="mb-2"><label class="form-label small mb-1">Slaptažodis</label><input name="Password" type="password" class="form-control form-control-sm" required minlength="4" /></div>
+                    <div class="mb-3"><label class="form-label small mb-1">Rolė</label>
+                        <select name="Role" class="form-select form-select-sm">
+                            <option value="Student">Mokinys</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success btn-sm w-100">Sukurti paskyrą</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
