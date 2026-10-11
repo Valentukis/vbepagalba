@@ -1,7 +1,7 @@
 .git
 .gitignore
-vbesort/bin/
-vbesort/obj/
+bin/
+obj/
 script/
 *.7z
 *.zip

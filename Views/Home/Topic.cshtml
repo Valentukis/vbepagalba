@@ -1,0 +1,52 @@
+@model VbeSort.Models.Topic
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<h2>Tema: @Model.Name</h2>
+<a asp-action="Index" class="btn btn-secondary mb-4">&larr; Atgal į temas</a>
+
+@if(Model.Exercises.Any())
+{
+    @foreach(var ex in Model.Exercises)
+    {
+        <div class="card mb-5 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>@ex.Year - @(ex.Session == "pagr" ? "Pagrindinė" : "Pakartotinė") sesija</strong>
+                <span class="badge bg-info text-dark">Užduotis @ex.Number</span>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    @foreach(var qImg in ex.QuestionImages)
+                    {
+                        <img src="/@qImg" class="img-fluid mb-2 border rounded" alt="Užduoties paveikslėlis" style="max-height: 800px; object-fit: contain;" />
+                    }
+                </div>
+                
+                <button class="btn btn-outline-success" type="button" data-bs-toggle="collapse" data-bs-target="#answer-@ex.Id" aria-expanded="false" aria-controls="answer-@ex.Id">
+                    Rodyti atsakymą
+                </button>
+
+                <div class="collapse mt-3" id="answer-@ex.Id">
+                    <div class="card card-body bg-light">
+                        @if(ex.AnswerImages.Any())
+                        {
+                            @foreach(var aImg in ex.AnswerImages)
+                            {
+                                <img src="/@aImg" class="img-fluid mb-2 border rounded" alt="Atsakymo paveikslėlis" style="max-height: 800px; object-fit: contain;"/>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-danger">Šiai užduočiai atsakymas nerastas.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="alert alert-info">Šioje temoje užduočių nerasta.</div>
+}

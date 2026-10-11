@@ -1,11 +1,11 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY vbesort/VbeSort.csproj vbesort/
-RUN dotnet restore vbesort/VbeSort.csproj
+COPY VbeSort.csproj ./
+RUN dotnet restore VbeSort.csproj
 
-COPY vbesort/ vbesort/
-RUN dotnet publish vbesort/VbeSort.csproj -c Release -o /app/publish --no-restore
+COPY . ./
+RUN dotnet publish VbeSort.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app

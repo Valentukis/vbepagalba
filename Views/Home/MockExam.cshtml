@@ -1,0 +1,56 @@
+@model VbeSort.Models.MockExamViewModel
+@{
+    ViewData["Title"] = "Bandomasis Egzaminas";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Bandomasis Egzaminas</h2>
+    <a asp-action="MockExamSetup" class="btn btn-secondary">Generuoti iš naujo</a>
+</div>
+
+@if(Model.Exercises.Any())
+{
+    var counter = 1;
+    @foreach(var ex in Model.Exercises)
+    {
+        <div class="card mb-5 shadow-sm border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <strong>Užduotis @counter (@ex.Topic - @ex.Year @(ex.Session == "pagr" ? "Pagr." : "Pak."))</strong>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    @foreach(var qImg in ex.QuestionImages)
+                    {
+                        <img src="/@qImg" class="img-fluid mb-2 border rounded" alt="Užduoties paveikslėlis" style="max-height: 800px; object-fit: contain;" />
+                    }
+                </div>
+                
+                <button class="btn btn-outline-success" type="button" data-bs-toggle="collapse" data-bs-target="#answer-@ex.Id-@counter" aria-expanded="false" aria-controls="answer-@ex.Id-@counter">
+                    Rodyti atsakymą
+                </button>
+
+                <div class="collapse mt-3" id="answer-@ex.Id-@counter">
+                    <div class="card card-body bg-light">
+                        @if(ex.AnswerImages.Any())
+                        {
+                            @foreach(var aImg in ex.AnswerImages)
+                            {
+                                <img src="/@aImg" class="img-fluid mb-2 border rounded" alt="Atsakymo paveikslėlis" style="max-height: 800px; object-fit: contain;"/>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-danger">Šiai užduočiai atsakymas nerastas.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        counter++;
+    }
+}
+else
+{
+    <div class="alert alert-info">Nepavyko sugeneruoti užduočių. Bandykite pasirinkti daugiau temų.</div>
+}
+
