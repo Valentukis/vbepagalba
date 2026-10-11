@@ -1,0 +1,5 @@
+vbesort/bin/
+vbesort/obj/
+vbesort/appsettings.json
+vbesort/appsettings.Local.json
+.env

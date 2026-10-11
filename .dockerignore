@@ -1,0 +1,8 @@
+.git
+.gitignore
+vbesort/bin/
+vbesort/obj/
+script/
+*.7z
+*.zip
+*.log

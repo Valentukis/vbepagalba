@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: vbe-sort
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: ASPNETCORE_URLS
+        value: http://+:10000
+      - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+        value: "true"
+      - key: VbeConfig__BasePath
+        value: /app
+      - key: Users__lukre
+        sync: false
+      - key: Users__ema
+        sync: false
+      - key: Users__karina
+        sync: false
+      - key: Users__tadas
+        sync: false
+      - key: Users__valentinas
+        sync: false
