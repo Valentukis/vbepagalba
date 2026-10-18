@@ -1,0 +1,86 @@
+@model VbeSort.Models.MockExamViewModel
+@{
+    ViewData["Title"] = "Bandomasis Egzaminas";
+}
+
+<div class="sticky-top bg-white border-bottom shadow-sm p-3 mb-4 rounded d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-0">Bandomasis Egzaminas (@Model.Exercises.Count užduotys)</h4>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="fs-5 fw-bold text-primary">⏱ <span id="timer">00:00</span></span>
+        <button id="pauseBtn" class="btn btn-sm btn-outline-secondary" type="button">Pristabdyti</button>
+        <a asp-action="MockExamSetup" class="btn btn-sm btn-secondary">Iš naujo</a>
+    </div>
+</div>
+
+<div id="resAlert" class="alert alert-success d-none mb-4 shadow" role="alert">
+    <h5 class="alert-heading">Egzaminas baigtas!</h5>
+    <p id="resText" class="mb-0 fs-5"></p>
+</div>
+
+@{ var counter = 1; }
+@foreach (var ex in Model.Exercises)
+{
+    <div class="card mb-4 shadow-sm border-primary">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-2">
+            <strong>Užduotis @counter (@ex.Topic - @ex.Year @(ex.Session == "pagr" ? "Pagr." : "Pak."))</strong>
+            <span class="badge bg-light text-dark" id="b-@counter">Neįvertinta</span>
+        </div>
+        <div class="card-body text-center">
+            <div class="mb-2">
+                @foreach (var q in ex.QuestionImages) { <img src="/@q" class="img-fluid mb-2 border rounded" style="max-height: 800px;" /> }
+            </div>
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <button class="btn btn-outline-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#a-@counter">Rodyti atsakymą</button>
+                <div class="btn-group btn-group-sm">
+                    <input type="radio" class="btn-check sc" name="g-@counter" id="c-@counter" value="1" data-i="@counter" onchange="setGrade(@counter, 1)">
+                    <label class="btn btn-outline-success" for="c-@counter">✓ Teisingai (+1)</label>
+                    <input type="radio" class="btn-check sc" name="g-@counter" id="w-@counter" value="0" data-i="@counter" onchange="setGrade(@counter, 0)">
+                    <label class="btn btn-outline-danger" for="w-@counter">✗ Neteisingai (0)</label>
+                </div>
+            </div>
+            <div class="collapse mt-2" id="a-@counter">
+                <div class="card card-body bg-light p-2">
+                    @if (ex.AnswerImages.Any()) {
+                        foreach (var a in ex.AnswerImages) { <img src="/@a" class="img-fluid border rounded mb-1" style="max-height: 800px;" /> }
+                    } else { <p class="text-danger mb-0 small">Atsakymas nerastas.</p> }
+                </div>
+            </div>
+        </div>
+    </div>
+    counter++;
+}
+
+<div class="text-center my-4">
+    <button id="finishBtn" type="button" class="btn btn-success btn-lg px-4 shadow" onclick="finishExam()">Baigti egzaminą ir skaičiuoti rezultatą</button>
+</div>
+
+@section Scripts {
+<script>
+    let sec = 0, running = true;
+    const tEl = document.getElementById("timer"), pBtn = document.getElementById("pauseBtn");
+    setInterval(() => { if (running) { sec++; tEl.textContent = `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`; } }, 1000);
+    pBtn?.addEventListener("click", () => { running = !running; pBtn.textContent = running ? "Pristabdyti" : "Tęsti"; });
+
+    function setGrade(i, v) {
+        const b = document.getElementById(`b-${i}`);
+        b.textContent = v ? "Teisingai (+1)" : "Neteisingai (0)";
+        b.className = `badge bg-${v ? 'success' : 'danger'}`;
+    }
+
+    function finishExam() {
+        running = false; pBtn.disabled = true;
+        const total = @Model.Exercises.Count;
+        let score = 0, evalCount = 0;
+        for (let i = 1; i <= total; i++) {
+            const ch = document.querySelector(`input[name="g-${i}"]:checked`);
+            if (ch) { evalCount++; score += parseInt(ch.value); }
+        }
+        const pct = Math.round((score / total) * 100);
+        document.getElementById("resText").innerHTML = `Išsprendei: <strong>${score} iš ${total} užduočių (${pct}%)</strong> | Laikas: ${Math.floor(sec/60)} min. ${sec%60} s.`;
+        document.getElementById("resAlert").classList.remove("d-none");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+}

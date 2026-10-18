@@ -1,0 +1,40 @@
+@model VbeSort.Models.MockExamSetupViewModel
+@{
+    ViewData["Title"] = "Bandomojo egzamino nustatymai";
+}
+
+<h2>Sukurti Bandomąjį Egzaminą</h2>
+<p class="text-muted">Pasirinkite temas iš kurių norite generuoti atsitiktines užduotis.</p>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <form asp-action="MockExam" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Užduočių skaičius</label>
+                <input asp-for="QuestionCount" type="number" class="form-control w-25" min="1" max="50" />
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Temos</label>
+                <div class="row">
+                    @foreach (var topic in Model.AvailableTopics)
+                    {
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="SelectedTopics" value="@topic" id="topic-@topic">
+                                <label class="form-check-label" for="topic-@topic">
+                                    @topic
+                                </label>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success">Generuoti egzaminą</button>
+        </form>
+    </div>
+</div>
+
