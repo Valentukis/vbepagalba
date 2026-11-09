@@ -2,11 +2,6 @@
 bin/
 obj/
 
-# SQLite local DB
-*.db
-*.db-shm
-*.db-wal
-
 # Secrets - never commit
 .env
 .env*
