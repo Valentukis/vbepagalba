@@ -6,41 +6,113 @@
     <title>@ViewData["Title"] - VBE Rūšiuoklė</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom shadow-sm mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand fw-bold text-primary" asp-controller="Home" asp-action="Index">VBE Rūšiuoklė</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+    <header class="sticky-top">
+        <nav class="navbar navbar-expand-lg vbe-navbar py-2">
+            <div class="container">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">VBE RŪŠIUOKLĖ</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-label="Meniu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Pradinis</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Home" asp-action="Statistics">Statistika</a></li>
-                        @if (User.Identity?.IsAuthenticated == true) {
-                            <li class="nav-item"><a class="nav-link text-success fw-bold" asp-controller="Home" asp-action="MockExamSetup">Bandomasis Egzaminas</a></li>
-                            @if (User.IsInRole("Admin")) {
-                                <li class="nav-item"><a class="nav-link text-primary fw-bold" asp-controller="Admin" asp-action="Index">Administravimas</a></li>
-                            }
+                <div class="collapse navbar-collapse justify-content-between" id="mainNav">
+                    <ul class="navbar-nav gap-1 ms-lg-2">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Temos</a>
+                        </li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Home" asp-action="Practice" asp-route-mode="due">Kartojimas</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Home" asp-action="MockExamSetup">Bandomasis egzaminas</a>
+                            </li>
+                        }
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Formulas">Formulynas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Statistics">Statistika</a>
+                        </li>
+                        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="Index">Administravimas</a>
+                            </li>
                         }
                     </ul>
-                    <ul class="navbar-nav">
-                        @if (User.Identity?.IsAuthenticated == true) {
-                            <li class="nav-item"><span class="nav-link text-muted">Prisijungęs: <strong>@User.Identity.Name</strong></span></li>
-                            <li class="nav-item"><a class="nav-link text-danger" asp-controller="Account" asp-action="Logout">Atsijungti</a></li>
-                        } else {
-                            <li class="nav-item"><a class="nav-link text-primary" asp-controller="Account" asp-action="Login">Prisijungti</a></li>
+
+                    <div class="d-flex align-items-center gap-2 mt-2 mt-lg-0">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <a asp-controller="Profile" asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                                @User.GetDisplayName()
+                            </a>
+                            <a class="btn btn-sm btn-primary" asp-controller="Account" asp-action="Logout">Atsijungti</a>
                         }
-                    </ul>
+                        else
+                        {
+                            <a class="btn btn-sm btn-outline-secondary" asp-controller="Account" asp-action="Register">Registruotis</a>
+                            <a class="btn btn-sm btn-primary" asp-controller="Account" asp-action="Login">Prisijungti</a>
+                        }
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container"><main role="main" class="pb-4">@RenderBody()</main></div>
-    <footer class="border-top footer text-muted py-3"><div class="container text-center small">&copy; 2026 - VBE Rūšiuoklė</div></footer>
+
+    <div id="vbeToastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080;"></div>
+
+    <div class="container py-4">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-dark alert-dismissible fade show py-2 small mb-3" role="alert">
+                @TempData["Success"]
+                <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Uždaryti"></button>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show py-2 small mb-3" role="alert">
+                @TempData["Error"]
+                <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Uždaryti"></button>
+            </div>
+        }
+
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top py-3 mt-auto">
+        <div class="container text-center small text-muted">
+            &copy; 2026 VBE Rūšiuoklė
+        </div>
+    </footer>
+
+    <!-- Šviesdėžė (Lightbox) -->
+    <dialog id="vbeLightbox" class="vbe-lightbox">
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom border-secondary bg-dark text-white gap-3">
+            <div>
+                <span id="vbeLightboxCaption" class="small fw-semibold">Užduoties peržiūra</span>
+                <span id="vbeLightboxDims" class="text-secondary small ms-2"></span>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <button type="button" class="btn btn-sm btn-outline-light py-0" onclick="VbeApp.zoomLightbox(-0.25, false)">−</button>
+                <button type="button" class="btn btn-sm btn-outline-light py-0" id="vbeLightboxZoomLabel" onclick="VbeApp.zoomLightbox(0, true)">100%</button>
+                <button type="button" class="btn btn-sm btn-outline-light py-0" onclick="VbeApp.zoomLightbox(0.25, false)">+</button>
+                <button type="button" class="btn btn-sm btn-primary py-0 ms-2" onclick="VbeApp.closeLightbox()">Uždaryti</button>
+            </div>
+        </div>
+        <div class="vbe-lightbox-body">
+            <img id="vbeLightboxImg" src="" alt="Padidintas vaizdas" />
+        </div>
+    </dialog>
+
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
