@@ -1,55 +1,67 @@
-@model List<VbeSort.Models.Topic>
+@model VbeSort.Models.StatisticsPageViewModel
 @{
     ViewData["Title"] = "Statistika";
-    var total = Model.Sum(t => t.Exercises.Count);
-    var years = Model.SelectMany(t => t.Exercises).Select(e => e.Year).Distinct().OrderBy(y => y).ToList();
+    var total = Model.TotalExercises;
+    var years = Model.ExercisesByYear.Keys.OrderBy(y => y).ToList();
 }
 
-<div class="mb-3">
-    <h3>Sistemos statistika</h3>
-    <p class="text-muted small">Apibendrinti duomenys apie VBE užduotis sistemoje.</p>
+<div class="mb-4 pb-3 border-bottom">
+    <h1 class="h3 fw-bold mb-0">Statistika</h1>
 </div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-4">
-        <div class="card text-center shadow-sm p-3 border-primary">
-            <h2 class="text-primary fw-bold mb-0">@Model.Count</h2>
-            <small class="text-muted">Temų skaičius</small>
+        <div class="vbe-card text-center p-3">
+            <div class="h3 fw-bold mb-0">@Model.Topics.Count</div>
+            <div class="small text-muted">Temų skaičius</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card text-center shadow-sm p-3 border-success">
-            <h2 class="text-success fw-bold mb-0">@total</h2>
-            <small class="text-muted">Užduočių skaičius</small>
+        <div class="vbe-card text-center p-3">
+            <div class="h3 fw-bold mb-0">@Model.TotalExercises</div>
+            <div class="small text-muted">Užduočių skaičius</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card text-center shadow-sm p-3 border-info">
-            <h2 class="text-info fw-bold mb-0">@(years.FirstOrDefault() ?? "—")–@(years.LastOrDefault() ?? "—")</h2>
-            <small class="text-muted">Metų aprėptis</small>
+        <div class="vbe-card text-center p-3">
+            <div class="h3 fw-bold mb-0">@(years.FirstOrDefault() ?? "—")–@(years.LastOrDefault() ?? "—")</div>
+            <div class="small text-muted">Metai</div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-header bg-dark text-white py-2"><h6 class="mb-0">Užduotys pagal temas</h6></div>
-    <table class="table table-hover align-middle mb-0 small">
-        <thead class="table-light"><tr><th>Tema</th><th class="text-center">Užduotys</th><th class="w-50">Dalis</th><th class="text-end">Veiksmas</th></tr></thead>
-        <tbody>
-            @foreach (var t in Model.OrderByDescending(x => x.Exercises.Count))
-            {
-                var p = total > 0 ? (int)Math.Round((double)t.Exercises.Count / total * 100) : 0;
+<div class="vbe-card overflow-hidden">
+    <div class="p-3 border-bottom">
+        <h2 class="h6 fw-bold mb-0">Užduotys pagal temas</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 small">
+            <thead class="table-light">
                 <tr>
-                    <td><strong>@t.Name</strong></td>
-                    <td class="text-center"><span class="badge bg-secondary">@t.Exercises.Count</span></td>
-                    <td>
-                        <div class="progress" style="height: 14px;">
-                            <div class="progress-bar" style="width: @p%;">@p%</div>
-                        </div>
-                    </td>
-                    <td class="text-end"><a asp-action="Topic" asp-route-name="@t.Name" class="btn btn-sm btn-outline-primary py-0">Atidaryti</a></td>
+                    <th>Tema</th>
+                    <th class="text-center">Užduotys</th>
+                    <th class="w-50">Dalis</th>
+                    <th class="text-end">Veiksmas</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var t in Model.Topics.OrderByDescending(x => x.Exercises.Count))
+                {
+                    var p = total > 0 ? (int)Math.Round((double)t.Exercises.Count / total * 100) : 0;
+                    <tr>
+                        <td class="fw-semibold">@t.Name</td>
+                        <td class="text-center">@t.Exercises.Count</td>
+                        <td>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar" style="width: @Math.Max(2, p)%;"></div>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Topic" asp-route-name="@t.Name" class="btn btn-sm btn-outline-primary py-0">Atidaryti</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>

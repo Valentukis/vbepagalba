@@ -1,40 +1,149 @@
 @model VbeSort.Models.MockExamSetupViewModel
 @{
-    ViewData["Title"] = "Bandomojo egzamino nustatymai";
+    ViewData["Title"] = "Bandomasis egzaminas";
 }
 
-<h2>Sukurti Bandomąjį Egzaminą</h2>
-<p class="text-muted">Pasirinkite temas iš kurių norite generuoti atsitiktines užduotis.</p>
+<div class="mb-4 pb-3 border-bottom">
+    <h1 class="h3 fw-bold mb-0">Bandomasis egzaminas</h1>
+</div>
 
-<div class="card shadow-sm mt-4">
-    <div class="card-body">
-        <form asp-action="MockExam" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="vbe-card p-4">
+            <form asp-action="MockExam" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
 
-            <div class="mb-4">
-                <label class="form-label fw-bold">Užduočių skaičius</label>
-                <input asp-for="QuestionCount" type="number" class="form-control w-25" min="1" max="50" />
-            </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-7">
+                        <label class="form-label fw-semibold small">Sudarymo būdas</label>
+                        <select asp-for="ExamMode" class="form-select form-select-sm" id="examModeSelect" onchange="onExamModeChanged()">
+                            <option value="full_session">Pilnas konkrečių metų egzaminas (pagal metus ir sesiją)</option>
+                            <option value="custom">Atsitiktinės užduotys iš pasirinktų temų</option>
+                            <option value="unseen_only">Tik dar nespręstos užduotys iš pasirinktų temų</option>
+                            <option value="review_due">Atidėtos pakartojimui užduotys (@Model.ReviewDueTotalCount užd.)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5" id="questionCountWrap">
+                        <label class="form-label fw-semibold small">Užduočių skaičius</label>
+                        <input asp-for="QuestionCount" type="number" class="form-control form-control-sm" min="1" max="50" />
+                    </div>
+                </div>
 
-            <div class="mb-4">
-                <label class="form-label fw-bold">Temos</label>
-                <div class="row">
-                    @foreach (var topic in Model.AvailableTopics)
+                <!-- 1) Pilno egzamino pasirinkimas pagal metus ir sesiją -->
+                <div id="fullSessionBlock" class="mb-4">
+                    <label class="form-label fw-semibold small">Pasirinkite egzaminą (metai ir sesija)</label>
+                    <select asp-for="SelectedExamSession" class="form-select">
+                        @foreach (var s in Model.AvailableExamSessions)
+                        {
+                            <option value="@s.Key">@s.Label</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- 2) Informacija, kai pasirinktos atidėtos pakartojimui užduotys -->
+                <div id="reviewDueBlock" class="mb-4 d-none">
+                    @if (Model.ReviewDueTotalCount > 0)
                     {
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="SelectedTopics" value="@topic" id="topic-@topic">
-                                <label class="form-check-label" for="topic-@topic">
-                                    @topic
+                        <div class="p-3 border rounded bg-light small">
+                            Egzaminas bus sudarytas tik iš tų užduočių, kurias esate pažymėję mygtuku <strong>„Pakartoti vėliau“</strong> (viso turite: <strong>@Model.ReviewDueTotalCount</strong>).
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger py-2 small mb-0">
+                            Šiuo metu neturite nė vienos pakartojimui atidėtos užduoties. Pirmiausia temų puslapiuose pažymėkite užduotis mygtuku <strong>„Pakartoti vėliau“</strong>.
+                        </div>
+                    }
+                </div>
+
+                <!-- 3) Pasirinktinių temų sąrašas -->
+                <div id="customTopicsBlock" class="mb-4 d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                        <label class="form-label fw-semibold small mb-0">Temos</label>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0" onclick="toggleAllTopics(true)">Pažymėti visas</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0" onclick="toggleAllTopics(false)">Atžymėti visas</button>
+                        </div>
+                    </div>
+
+                    <div class="row g-2">
+                        @foreach (var topicName in Model.AvailableTopics)
+                        {
+                            Model.MasteryByTopic.TryGetValue(topicName, out var mastery);
+                            <div class="col-md-6">
+                                <label class="p-2 border rounded d-flex justify-content-between align-items-center w-100 bg-light small" style="cursor: pointer;">
+                                    <span class="form-check mb-0">
+                                        <input class="form-check-input topic-cb"
+                                               type="checkbox"
+                                               name="SelectedTopics"
+                                               value="@topicName"
+                                               id="topic-@topicName" />
+                                        <span class="form-check-label">@topicName</span>
+                                    </span>
+                                    @if (mastery != null)
+                                    {
+                                        <span class="text-muted">@mastery.SolvedCount/@mastery.TotalExercises</span>
+                                    }
                                 </label>
                             </div>
+                        }
+                    </div>
+                </div>
+
+                <button id="startExamSubmitBtn" type="submit" class="btn btn-primary w-100">
+                    Pradėti egzaminą
+                </button>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.RecentAttempts.Any())
+    {
+        <div class="col-lg-4">
+            <div class="vbe-card p-3">
+                <h2 class="h6 fw-bold mb-2">Paskutiniai bandymai</h2>
+                <div class="list-group list-group-flush small">
+                    @foreach (var att in Model.RecentAttempts)
+                    {
+                        <div class="list-group-item px-0 py-2 bg-transparent d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">@att.Title</div>
+                                <div class="text-muted">@att.CompletedAtUtc.ToString("yyyy-MM-dd HH:mm") · @att.SolvedCorrectly/@att.TotalQuestions</div>
+                            </div>
+                            <span class="status-pill">@att.ScorePercentage%</span>
                         </div>
                     }
                 </div>
             </div>
-
-            <button type="submit" class="btn btn-success">Generuoti egzaminą</button>
-        </form>
-    </div>
+        </div>
+    }
 </div>
 
+@section Scripts {
+<script>
+    const reviewDueTotal = @Model.ReviewDueTotalCount;
+
+    function toggleAllTopics(check) {
+        document.querySelectorAll('.topic-cb').forEach(cb => cb.checked = check);
+    }
+
+    function onExamModeChanged() {
+        const mode = document.getElementById('examModeSelect').value;
+        const isFullSession = mode === 'full_session';
+        const isReviewDue = mode === 'review_due';
+        const isCustomTopics = mode === 'custom' || mode === 'unseen_only';
+
+        document.getElementById('fullSessionBlock').classList.toggle('d-none', !isFullSession);
+        document.getElementById('reviewDueBlock').classList.toggle('d-none', !isReviewDue);
+        document.getElementById('customTopicsBlock').classList.toggle('d-none', !isCustomTopics);
+        document.getElementById('questionCountWrap').classList.toggle('d-none', isFullSession);
+
+        const submitBtn = document.getElementById('startExamSubmitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = isReviewDue && reviewDueTotal === 0;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', onExamModeChanged);
+</script>
+}

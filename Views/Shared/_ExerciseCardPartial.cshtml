@@ -1,0 +1,185 @@
+@model (VbeSort.Models.Exercise Exercise, VbeSort.Models.ExerciseProgress? Progress, string? ReasonBadge)
+@{
+    var ex = Model.Exercise;
+    var prog = Model.Progress;
+    var status = prog?.Status ?? ExerciseStatus.Unseen;
+    var statusInt = (int)status;
+    var isSolved = status == ExerciseStatus.Solved;
+    var isReview = status == ExerciseStatus.NeedsReview || status == ExerciseStatus.Hard;
+
+    var statusLabel = isSolved
+        ? "Išspręsta"
+        : isReview
+            ? "Pakartoti"
+            : "Nespręsta";
+
+    var statusPillClass = isSolved
+        ? "status-pill-solved"
+        : isReview
+            ? "status-pill-review"
+            : "";
+
+    var safeDomId = ex.Id.Replace(" ", "_");
+}
+
+<div class="vbe-card mb-4 exercise-card"
+     id="ex-@safeDomId"
+     data-ex-id="@ex.Id"
+     data-year="@ex.Year"
+     data-session="@ex.Session"
+     data-difficulty="@ex.EstimatedDifficulty"
+     data-status="@statusInt">
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 py-2 px-3 border-bottom">
+        <div class="d-flex align-items-center flex-wrap gap-2">
+            <span class="fw-semibold">@ex.Year m. @(ex.Session == "pagr" ? "pagrindinė sesija" : "pakartotinė sesija")</span>
+            <span class="text-muted">·</span>
+            <span class="fw-semibold">@ex.Number užduotis</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="status-pill ex-status-pill @statusPillClass">@statusLabel</span>
+        </div>
+    </div>
+
+    <div class="p-3">
+        <!-- Sąlygos paveikslėliai su tiksliais PNG matmenimis (be ištempimo) -->
+        <div class="vbe-media-stage mb-3" id="qstage-@safeDomId">
+            @foreach (var qAsset in ex.QuestionAssets)
+            {
+                var extraClass = qAsset.IsWideStrip ? "vbe-img-wide-strip" : qAsset.IsTallColumn ? "vbe-img-tall-column" : "";
+                <figure class="vbe-figure">
+                    <img src="/@qAsset.Path"
+                         width="@qAsset.Width"
+                         height="@qAsset.Height"
+                         style="--natural-w: @(qAsset.Width)px;"
+                         class="vbe-img @extraClass"
+                         loading="lazy"
+                         alt="@ex.Topic – @ex.Year m. #@ex.Number sąlyga" />
+                </figure>
+            }
+        </div>
+
+        <!-- Veiksmų juosta -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-outline-primary"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#ans-@safeDomId">
+                    Rodyti atsakymą
+                </button>
+                <button class="btn btn-sm btn-outline-secondary"
+                        type="button"
+                        onclick="VbeApp.toggleScratchpad('@safeDomId')">
+                    Sprendimo lenta
+                </button>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <button class="btn btn-sm btn-outline-secondary"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#note-@safeDomId">
+                        Pastaba @(!string.IsNullOrWhiteSpace(prog?.PersonalNote) ? "•" : "")
+                    </button>
+                }
+                @if (!string.IsNullOrWhiteSpace(ex.OfficialPdfPath))
+                {
+                    <a href="/@ex.OfficialPdfPath" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+                        Sesijos PDF &nearr;
+                    </a>
+                }
+            </div>
+
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="d-flex gap-2">
+                    <button type="button"
+                            class="btn btn-sm @(isSolved ? "btn-dark" : "btn-outline-secondary") btn-mark-solved"
+                            onclick="VbeApp.toggleExerciseStatus('@ex.Id', 1)">
+                        @(isSolved ? "✓ Išspręsta" : "Pažymėti išspręsta")
+                    </button>
+                    <button type="button"
+                            class="btn btn-sm @(isReview ? "btn-primary" : "btn-outline-secondary") btn-mark-review"
+                            onclick="VbeApp.toggleExerciseStatus('@ex.Id', 3)">
+                        @(isReview ? "Atidėta pakartoti" : "Pakartoti vėliau")
+                    </button>
+                </div>
+            }
+        </div>
+
+        <!-- Interaktyvi sprendimo lenta (Scratchpad Canvas) -->
+        <div id="scratch-wrap-@safeDomId" class="d-none mt-3 scratchpad-panel">
+            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                <span class="small fw-semibold">Sprendimo lenta</span>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="color-swatch active" style="background: #141414;" title="Juoda"
+                            onclick="VbeApp.setScratchColor('@safeDomId', '#141414', 2.2, this)"></button>
+                    <button type="button" class="color-swatch" style="background: #e04332;" title="Raudona"
+                            onclick="VbeApp.setScratchColor('@safeDomId', '#e04332', 2.2, this)"></button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0"
+                            onclick="VbeApp.setScratchColor('@safeDomId', '#ffffff', 18, this)">Trintukas</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0"
+                            onclick="VbeApp.expandScratchpad('@safeDomId')">Aukštis</button>
+                    <button type="button" class="btn btn-sm btn-primary py-0"
+                            onclick="VbeApp.clearScratchpad('@safeDomId')">Išvalyti</button>
+                </div>
+            </div>
+            <canvas id="scratch-canvas-@safeDomId" class="scratchpad-canvas"></canvas>
+        </div>
+
+        <!-- Asmeninė pastaba -->
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="collapse @(!string.IsNullOrWhiteSpace(prog?.PersonalNote) ? "show" : "") mt-3" id="note-@safeDomId">
+                <div class="p-2 border rounded bg-light">
+                    <div class="input-group input-group-sm">
+                        <input id="note-input-@ex.Id" type="text" class="form-control"
+                               placeholder="Pastaba sau..."
+                               value="@(prog?.PersonalNote ?? "")" />
+                        <button class="btn btn-primary" type="button" onclick="VbeApp.saveExerciseNote('@ex.Id')">Išsaugoti</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Oficialus atsakymas su proporcijų apsauga -->
+        <div class="collapse mt-3" id="ans-@safeDomId">
+            <div class="vbe-media-stage" id="astage-@safeDomId">
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                    <span class="small text-muted fw-semibold">Atsakymas · @ex.Number užduotis</span>
+                    <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none p-0 small"
+                            onclick="VbeApp.toggleStageZoom('astage-@safeDomId')">
+                        Mastelis (100% / 125%)
+                    </button>
+                </div>
+
+                @if (ex.AnswerAssets.Any())
+                {
+                    foreach (var aAsset in ex.AnswerAssets)
+                    {
+                        var aClass = aAsset.IsWideStrip ? "vbe-img-wide-strip" : aAsset.IsTallColumn ? "vbe-img-tall-column" : "";
+                        if (aAsset.IsSharedRange)
+                        {
+                            <div class="small text-muted mb-2">
+                                @aAsset.RangeLabel — <strong>@ex.Number</strong> užduotis.
+                            </div>
+                        }
+                        <figure class="vbe-figure">
+                            <img src="/@aAsset.Path"
+                                 width="@aAsset.Width"
+                                 height="@aAsset.Height"
+                                 style="--natural-w: @(aAsset.Width)px;"
+                                 class="vbe-img @aClass"
+                                 loading="lazy"
+                                 alt="@ex.Year m. #@ex.Number oficialus atsakymas" />
+                        </figure>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted mb-0 small">Atsakymas nerastas.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

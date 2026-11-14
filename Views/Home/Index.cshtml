@@ -1,24 +1,81 @@
-@model List<VbeSort.Models.Topic>
+@model VbeSort.Models.HomeIndexViewModel
 @{
     ViewData["Title"] = "Temos";
+    var user = Model.CurrentUser;
 }
 
-<div class="text-center">
-    <h1 class="display-4">VBE Rūšiuoklė</h1>
-    <p class="lead">Pasirinkite temą praktikuotis praėjusių VBE egzaminų užduotis.</p>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4 pb-3 border-bottom">
+    <h1 class="h3 fw-bold mb-0">Temos</h1>
+
+    <div class="d-flex gap-2 align-items-center">
+        <input id="topicSearchInput" type="search" class="form-control form-control-sm"
+               style="min-width: 220px;"
+               placeholder="Ieškoti temos..."
+               oninput="filterTopicsGrid()" />
+    </div>
 </div>
 
-<div class="row mt-4">
-    @if(Model != null && Model.Any())
+@if (user != null)
+{
+    <div class="vbe-card p-3 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center flex-wrap gap-4 small">
+            <div>
+                <span class="text-muted">Išspręsta:</span>
+                <strong class="ms-1">@Model.TotalSolvedCount / @Model.TotalExercisesCount</strong>
+            </div>
+            <div>
+                <span class="text-muted">Pakartoti:</span>
+                <strong class="ms-1">@Model.DueForReviewCount</strong>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            @if (Model.DueForReviewCount > 0)
+            {
+                <a asp-action="Practice" asp-route-mode="due" class="btn btn-sm btn-outline-secondary">
+                    Atidėtos (@Model.DueForReviewCount)
+                </a>
+            }
+            <a asp-action="MockExamSetup" class="btn btn-sm btn-primary">Bandomasis egzaminas</a>
+        </div>
+    </div>
+}
+
+<div class="row g-3" id="topicsGrid">
+    @if (Model.Topics.Any())
     {
-        @foreach (var topic in Model)
+        @foreach (var topic in Model.Topics)
         {
-            <div class="col-md-4 mb-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">@topic.Name</h5>
-                        <p class="card-text text-muted">@topic.Exercises.Count užduočių</p>
-                        <a asp-action="Topic" asp-route-name="@topic.Name" class="btn btn-primary mt-auto">Praktikuotis</a>
+            Model.TopicMastery.TryGetValue(topic.Name, out var mastery);
+            var solvedCount = mastery?.SolvedCount ?? 0;
+            var totalCount = topic.Exercises.Count;
+            var pct = totalCount > 0 ? (int)Math.Round((double)solvedCount / totalCount * 100) : 0;
+
+            <div class="col-md-6 col-lg-4 topic-grid-item"
+                 data-name="@topic.Name.ToLowerInvariant()">
+                <div class="vbe-card vbe-card-interactive p-3 h-100 d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-baseline mb-3">
+                        <h2 class="h6 fw-bold mb-0">@topic.Name</h2>
+                        <span class="small text-muted">@totalCount užd.</span>
+                    </div>
+
+                    <div>
+                        @if (user != null)
+                        {
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <span>@solvedCount / @totalCount</span>
+                                    <span>@pct%</span>
+                                </div>
+                                <div class="progress" style="height: 4px;">
+                                    <div class="progress-bar" style="width: @pct%"></div>
+                                </div>
+                            </div>
+                        }
+
+                        <a asp-action="Topic" asp-route-name="@topic.Name" class="btn btn-sm btn-outline-primary w-100">
+                            Atidaryti
+                        </a>
                     </div>
                 </div>
             </div>
@@ -27,7 +84,19 @@
     else
     {
         <div class="alert alert-warning w-100">
-            Nerasta jokių temų. Įsitikinkite, kad 'surusiuotos' ir 'Atsakymai' aplankai yra teisingoje vietoje.
+            Nerasta jokių temų.
         </div>
     }
 </div>
+
+@section Scripts {
+<script>
+    function filterTopicsGrid() {
+        const q = (document.getElementById('topicSearchInput')?.value || '').trim().toLowerCase();
+        document.querySelectorAll('.topic-grid-item').forEach(el => {
+            const match = !q || el.dataset.name.includes(q);
+            el.style.display = match ? '' : 'none';
+        });
+    }
+</script>
+}

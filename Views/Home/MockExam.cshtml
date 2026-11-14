@@ -1,50 +1,145 @@
 @model VbeSort.Models.MockExamViewModel
 @{
-    ViewData["Title"] = "Bandomasis Egzaminas";
+    ViewData["Title"] = Model.Title;
 }
 
-<div class="sticky-top bg-white border-bottom shadow-sm p-3 mb-4 rounded d-flex justify-content-between align-items-center">
+<div class="sticky-top vbe-card p-3 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2" style="top: 58px; z-index: 1020;">
     <div>
-        <h4 class="mb-0">Bandomasis Egzaminas (@Model.Exercises.Count užduotys)</h4>
+        <h1 class="h5 fw-bold mb-0">@Model.Title (@Model.Exercises.Count užd.)</h1>
     </div>
     <div class="d-flex align-items-center gap-2">
-        <span class="fs-5 fw-bold text-primary">⏱ <span id="timer">00:00</span></span>
+        @if (!string.IsNullOrEmpty(Model.ExamYear) && !string.IsNullOrEmpty(Model.ExamSession))
+        {
+            <a asp-action="ExamPdf" asp-route-year="@Model.ExamYear" asp-route-session="@Model.ExamSession"
+               target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+                Sesijos PDF &nearr;
+            </a>
+        }
+        <span class="fw-bold font-monospace me-1" id="timer">00:00</span>
         <button id="pauseBtn" class="btn btn-sm btn-outline-secondary" type="button">Pristabdyti</button>
-        <a asp-action="MockExamSetup" class="btn btn-sm btn-secondary">Iš naujo</a>
+        <a asp-action="MockExamSetup" class="btn btn-sm btn-outline-secondary">Iš naujo</a>
     </div>
 </div>
 
-<div id="resAlert" class="alert alert-success d-none mb-4 shadow" role="alert">
-    <h5 class="alert-heading">Egzaminas baigtas!</h5>
-    <p id="resText" class="mb-0 fs-5"></p>
+<div id="resAlert" class="vbe-card p-3 d-none mb-4" role="alert">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h2 class="h6 fw-bold mb-1">Egzaminas baigtas</h2>
+            <p id="resText" class="mb-0 small"></p>
+        </div>
+        <a asp-controller="Profile" asp-action="Index" class="btn btn-sm btn-outline-primary">Peržiūrėti istoriją</a>
+    </div>
 </div>
 
 @{ var counter = 1; }
 @foreach (var ex in Model.Exercises)
 {
-    <div class="card mb-4 shadow-sm border-primary">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-2">
-            <strong>Užduotis @counter (@ex.Topic - @ex.Year @(ex.Session == "pagr" ? "Pagr." : "Pak."))</strong>
-            <span class="badge bg-light text-dark" id="b-@counter">Neįvertinta</span>
-        </div>
-        <div class="card-body text-center">
-            <div class="mb-2">
-                @foreach (var q in ex.QuestionImages) { <img src="/@q" class="img-fluid mb-2 border rounded" style="max-height: 800px;" /> }
+    var safeDomId = $"exam_{counter}_{ex.Id}";
+    <div class="vbe-card mb-4 exam-question-card"
+         data-index="@counter"
+         data-ex-id="@ex.Id"
+         data-points="@ex.SuggestedPoints">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 py-2 px-3 border-bottom">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="fw-semibold">#@ex.Number · @ex.Topic</span>
+                <span class="text-muted small">(@ex.Year m. @ex.SessionShortLabel)</span>
             </div>
-            <div class="d-flex justify-content-center gap-2 flex-wrap">
-                <button class="btn btn-outline-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#a-@counter">Rodyti atsakymą</button>
-                <div class="btn-group btn-group-sm">
-                    <input type="radio" class="btn-check sc" name="g-@counter" id="c-@counter" value="1" data-i="@counter" onchange="setGrade(@counter, 1)">
-                    <label class="btn btn-outline-success" for="c-@counter">✓ Teisingai (+1)</label>
-                    <input type="radio" class="btn-check sc" name="g-@counter" id="w-@counter" value="0" data-i="@counter" onchange="setGrade(@counter, 0)">
-                    <label class="btn btn-outline-danger" for="w-@counter">✗ Neteisingai (0)</label>
+            <span class="status-pill" id="b-@counter">Neįvertinta</span>
+        </div>
+
+        <div class="p-3">
+            <!-- Sąlygos paveikslėliai su tiksliais PNG matmenimis -->
+            <div class="vbe-media-stage mb-3" id="qstage-@safeDomId">
+                @foreach (var qAsset in ex.QuestionAssets)
+                {
+                    var extraClass = qAsset.IsWideStrip ? "vbe-img-wide-strip" : qAsset.IsTallColumn ? "vbe-img-tall-column" : "";
+                    <figure class="vbe-figure">
+                        <img src="/@qAsset.Path"
+                             width="@qAsset.Width"
+                             height="@qAsset.Height"
+                             style="--natural-w: @(qAsset.Width)px;"
+                             class="vbe-img @extraClass"
+                             loading="lazy"
+                             alt="Egzamino užduotis @counter" />
+                    </figure>
+                }
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#a-@counter">
+                        Rodyti atsakymą
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="VbeApp.toggleScratchpad('@safeDomId')">
+                        Sprendimo lenta
+                    </button>
+                    @if (!string.IsNullOrWhiteSpace(ex.OfficialPdfPath))
+                    {
+                        <a href="/@ex.OfficialPdfPath" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+                            Sesijos PDF &nearr;
+                        </a>
+                    }
+                </div>
+
+                <div class="btn-group btn-group-sm" role="group">
+                    <input type="radio" class="btn-check sc" name="g-@counter" id="c-@counter" value="2" onchange="setGrade(@counter, 2)">
+                    <label class="btn btn-outline-dark" for="c-@counter">Teisingai</label>
+
+                    <input type="radio" class="btn-check sc" name="g-@counter" id="w-@counter" value="0" onchange="setGrade(@counter, 0)">
+                    <label class="btn btn-outline-danger" for="w-@counter">Neteisingai</label>
                 </div>
             </div>
-            <div class="collapse mt-2" id="a-@counter">
-                <div class="card card-body bg-light p-2">
-                    @if (ex.AnswerImages.Any()) {
-                        foreach (var a in ex.AnswerImages) { <img src="/@a" class="img-fluid border rounded mb-1" style="max-height: 800px;" /> }
-                    } else { <p class="text-danger mb-0 small">Atsakymas nerastas.</p> }
+
+            <!-- Sprendimo lenta (Scratchpad Canvas) -->
+            <div id="scratch-wrap-@safeDomId" class="d-none mt-3 scratchpad-panel">
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                    <span class="small fw-semibold">Sprendimo lenta</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="color-swatch active" style="background: #141414;" title="Juoda"
+                                onclick="VbeApp.setScratchColor('@safeDomId', '#141414', 2.2, this)"></button>
+                        <button type="button" class="color-swatch" style="background: #e04332;" title="Raudona"
+                                onclick="VbeApp.setScratchColor('@safeDomId', '#e04332', 2.2, this)"></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0"
+                                onclick="VbeApp.setScratchColor('@safeDomId', '#ffffff', 18, this)">Trintukas</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0"
+                                onclick="VbeApp.expandScratchpad('@safeDomId')">Aukštis</button>
+                        <button type="button" class="btn btn-sm btn-primary py-0"
+                                onclick="VbeApp.clearScratchpad('@safeDomId')">Išvalyti</button>
+                    </div>
+                </div>
+                <canvas id="scratch-canvas-@safeDomId" class="scratchpad-canvas"></canvas>
+            </div>
+
+            <!-- Oficialus atsakymas -->
+            <div class="collapse mt-3" id="a-@counter">
+                <div class="vbe-media-stage">
+                    @if (ex.AnswerAssets.Any())
+                    {
+                        foreach (var aAsset in ex.AnswerAssets)
+                        {
+                            var aClass = aAsset.IsWideStrip ? "vbe-img-wide-strip" : aAsset.IsTallColumn ? "vbe-img-tall-column" : "";
+                            if (aAsset.IsSharedRange)
+                            {
+                                <div class="small text-muted mb-2">
+                                    @aAsset.RangeLabel — <strong>@ex.Number</strong> užduotis.
+                                </div>
+                            }
+                            <figure class="vbe-figure">
+                                <img src="/@aAsset.Path"
+                                     width="@aAsset.Width"
+                                     height="@aAsset.Height"
+                                     style="--natural-w: @(aAsset.Width)px;"
+                                     class="vbe-img @aClass"
+                                     loading="lazy"
+                                     alt="Atsakymas @counter" />
+                            </figure>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0 small">Atsakymas nerastas.</p>
+                    }
                 </div>
             </div>
         </div>
@@ -53,34 +148,77 @@
 }
 
 <div class="text-center my-4">
-    <button id="finishBtn" type="button" class="btn btn-success btn-lg px-4 shadow" onclick="finishExam()">Baigti egzaminą ir skaičiuoti rezultatą</button>
+    <button id="finishBtn" type="button" class="btn btn-primary px-4" onclick="finishExam()">
+        Baigti egzaminą ir skaičiuoti rezultatą
+    </button>
 </div>
 
 @section Scripts {
 <script>
-    let sec = 0, running = true;
+    let sec = 0, running = true, savedAttempt = false;
     const tEl = document.getElementById("timer"), pBtn = document.getElementById("pauseBtn");
-    setInterval(() => { if (running) { sec++; tEl.textContent = `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`; } }, 1000);
-    pBtn?.addEventListener("click", () => { running = !running; pBtn.textContent = running ? "Pristabdyti" : "Tęsti"; });
+    setInterval(() => {
+        if (running) {
+            sec++;
+            tEl.textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+        }
+    }, 1000);
 
-    function setGrade(i, v) {
+    pBtn?.addEventListener("click", () => {
+        running = !running;
+        pBtn.textContent = running ? "Pristabdyti" : "Tęsti";
+    });
+
+    function setGrade(i, outcome) {
         const b = document.getElementById(`b-${i}`);
-        b.textContent = v ? "Teisingai (+1)" : "Neteisingai (0)";
-        b.className = `badge bg-${v ? 'success' : 'danger'}`;
+        if (outcome === 2) {
+            b.textContent = "Teisingai";
+            b.className = "status-pill status-pill-solved";
+        } else {
+            b.textContent = "Neteisingai";
+            b.className = "status-pill status-pill-review";
+        }
     }
 
-    function finishExam() {
-        running = false; pBtn.disabled = true;
-        const total = @Model.Exercises.Count;
-        let score = 0, evalCount = 0;
-        for (let i = 1; i <= total; i++) {
+    async function finishExam() {
+        running = false;
+        if (pBtn) pBtn.disabled = true;
+
+        const cards = document.querySelectorAll(".exam-question-card");
+        const items = [];
+        let solved = 0;
+
+        cards.forEach((card, idx) => {
+            const i = idx + 1;
+            const exId = card.dataset.exId;
             const ch = document.querySelector(`input[name="g-${i}"]:checked`);
-            if (ch) { evalCount++; score += parseInt(ch.value); }
-        }
-        const pct = Math.round((score / total) * 100);
-        document.getElementById("resText").innerHTML = `Išsprendei: <strong>${score} iš ${total} užduočių (${pct}%)</strong> | Laikas: ${Math.floor(sec/60)} min. ${sec%60} s.`;
+            const outcome = ch ? parseInt(ch.value, 10) : 0;
+            if (outcome === 2) solved++;
+            items.push({ exerciseId: exId, outcome });
+        });
+
+        const pct = cards.length > 0 ? Math.round((solved / cards.length) * 100) : 0;
+        const resText = document.getElementById("resText");
+        resText.innerHTML = `Išspręsta teisingai: <strong>${solved} iš ${cards.length} (${pct}%)</strong> · Trukmė: ${Math.floor(sec / 60)} min. ${sec % 60} s.`;
         document.getElementById("resAlert").classList.remove("d-none");
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        if (!savedAttempt) {
+            savedAttempt = true;
+            try {
+                await fetch("/Api/ExamAttempt", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Title)),
+                        mode: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ExamMode)),
+                        durationSeconds: Math.max(1, sec),
+                        topics: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SelectedTopics)),
+                        items
+                    })
+                });
+            } catch { }
+        }
     }
 </script>
 }
