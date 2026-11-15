@@ -1,31 +1,327 @@
+:root {
+  --vbe-bg: #f7f7f5;
+  --vbe-surface: #ffffff;
+  --vbe-surface-subtle: #f2f2ef;
+  --vbe-border: #dcdcd8;
+  --vbe-border-strong: #141414;
+  --vbe-text: #141414;
+  --vbe-text-muted: #575753;
+  --vbe-red: #e04332;
+  --vbe-red-hover: #c23122;
+  --vbe-black: #141414;
+  --vbe-radius: 4px;
+}
+
 html {
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
+  font-size: 15px;
   min-height: 100%;
 }
 
 body {
-  margin-bottom: 60px;
+  background-color: var(--vbe-bg);
+  color: var(--vbe-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+main {
+  flex: 1 0 auto;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+a {
+  color: var(--vbe-text);
+}
+
+a:hover {
+  color: var(--vbe-red);
+}
+
+/* Horizontai stiliaus navigacija: juoda/balta/raudona */
+.vbe-navbar {
+  background-color: var(--vbe-surface);
+  border-bottom: 2px solid var(--vbe-black);
+}
+
+.vbe-navbar .navbar-brand {
+  color: #ffffff !important;
+  background-color: var(--vbe-red);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-size: 1rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 2px;
+}
+
+.vbe-navbar .nav-link {
+  color: var(--vbe-text) !important;
+  font-weight: 500;
+  font-size: 0.94rem;
+  padding: 0.4rem 0.75rem !important;
+  border-radius: 2px;
+}
+
+.vbe-navbar .nav-link:hover,
+.vbe-navbar .nav-link.active {
+  color: var(--vbe-red) !important;
+  background-color: var(--vbe-surface-subtle);
+}
+
+/* Mygtukai pagal Horizontai paletę (be Bootstrap mėlynos) */
+.btn {
+  border-radius: var(--vbe-radius);
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: var(--vbe-red) !important;
+  border-color: var(--vbe-red) !important;
+  color: #ffffff !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: var(--vbe-red-hover) !important;
+  border-color: var(--vbe-red-hover) !important;
+  color: #ffffff !important;
+}
+
+.btn-outline-primary {
+  color: var(--vbe-black) !important;
+  border-color: var(--vbe-black) !important;
+  background-color: transparent !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  background-color: var(--vbe-red) !important;
+  border-color: var(--vbe-red) !important;
+  color: #ffffff !important;
+}
+
+.btn-outline-secondary {
+  color: var(--vbe-black) !important;
+  border-color: #b5b5b0 !important;
+  background-color: #ffffff !important;
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--vbe-black) !important;
+  border-color: var(--vbe-black) !important;
+  color: #ffffff !important;
+}
+
+.bg-primary,
+.progress-bar {
+  background-color: var(--vbe-red) !important;
+}
+
+.text-primary {
+  color: var(--vbe-red) !important;
+}
+
+/* Įvesties laukai (sprendžia ir slaptažodžio lauko teksto matomumą) */
+.form-control,
+.form-select,
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="search"] {
+  background-color: #ffffff !important;
+  color: #141414 !important;
+  border: 1px solid #b5b5b0 !important;
+  border-radius: var(--vbe-radius);
+  caret-color: #141414;
+}
+
+.form-control::placeholder,
+input::placeholder {
+  color: #787872 !important;
+  opacity: 1 !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: #ffffff !important;
+  color: #141414 !important;
+  border-color: var(--vbe-red) !important;
+  box-shadow: 0 0 0 2px rgba(224, 67, 50, 0.18) !important;
+}
+
+.form-check-input:checked {
+  background-color: var(--vbe-red) !important;
+  border-color: var(--vbe-red) !important;
+}
+
+/* Kortelės */
+.vbe-card {
+  background-color: var(--vbe-surface);
+  border: 1px solid var(--vbe-border);
+  border-radius: var(--vbe-radius);
+}
+
+.vbe-card-interactive {
+  transition: border-color 0.12s ease;
+}
+
+.vbe-card-interactive:hover {
+  border-color: var(--vbe-black);
+}
+
+/* Santūrios žymos */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border-radius: 3px;
+  border: 1px solid var(--vbe-border);
+  background-color: var(--vbe-surface-subtle);
+  color: var(--vbe-text);
+}
+
+.status-pill-solved {
+  background-color: var(--vbe-black);
+  border-color: var(--vbe-black);
+  color: #ffffff;
+}
+
+.status-pill-review {
+  background-color: rgba(224, 67, 50, 0.12);
+  border-color: var(--vbe-red);
+  color: var(--vbe-red);
+}
+
+/* ==========================================================================
+   Užduočių ir atsakymų paveikslėlių proporcijų apsauga
+   ========================================================================== */
+.vbe-media-stage {
+  background-color: #ffffff;
+  border: 1px solid var(--vbe-border);
+  border-radius: var(--vbe-radius);
+  padding: 1.25rem;
+  overflow-x: auto;
+  text-align: center;
+}
+
+.vbe-figure {
+  display: inline-block;
+  margin: 0 auto 0.5rem auto;
+  max-width: 100%;
+}
+
+.vbe-img {
+  display: block;
+  width: auto !important;
+  height: auto !important;
+  max-width: min(100%, var(--natural-w, 100%));
+  max-height: 760px;
+  object-fit: contain;
+  margin-inline: auto;
+  cursor: zoom-in;
+}
+
+.vbe-img-wide-strip {
+  max-height: none;
+  min-height: 44px;
+  padding: 4px 0;
+}
+
+.vbe-img-tall-column {
+  max-height: 820px;
+}
+
+.vbe-media-stage.zoom-125 .vbe-img {
+  max-width: min(100%, calc(var(--natural-w, 800px) * 1.25));
+  max-height: 980px;
+}
+
+/* Šviesdėžė (Lightbox) */
+dialog.vbe-lightbox {
+  border: 2px solid var(--vbe-black);
+  border-radius: var(--vbe-radius);
+  padding: 0;
+  max-width: 95vw;
+  max-height: 92vh;
+  background: var(--vbe-black);
+  color: #ffffff;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+dialog.vbe-lightbox::backdrop {
+  background: rgba(20, 20, 20, 0.72);
+}
+
+.vbe-lightbox-body {
+  overflow: auto;
+  max-height: calc(92vh - 52px);
+  padding: 1.25rem;
+  background: #ffffff;
+  text-align: center;
+}
+
+.vbe-lightbox-body img {
+  display: inline-block;
+  width: auto;
+  height: auto;
+  max-width: none;
+  transform-origin: top center;
+  transition: transform 0.12s ease;
+}
+
+/* Sprendimo lenta (Scratchpad canvas) */
+.scratchpad-panel {
+  background-color: var(--vbe-surface-subtle);
+  border: 1px solid var(--vbe-border);
+  border-radius: var(--vbe-radius);
+  padding: 0.75rem;
+}
+
+.scratchpad-canvas {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(to right, rgba(20, 20, 20, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20, 20, 20, 0.08) 1px, transparent 1px);
+  background-size: 22px 22px;
+  border: 1px solid #b5b5b0;
+  border-radius: 3px;
+  cursor: crosshair;
+  touch-action: none;
+  width: 100%;
+  height: 280px;
+  display: block;
+}
+
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.color-swatch.active {
+  border-color: var(--vbe-black);
+  transform: scale(1.12);
+}
+
+/* Užduoties kortelės kairysis indikatorius */
+.exercise-card {
+  border-left: 3px solid var(--vbe-border);
+}
+
+.exercise-card[data-status="1"] {
+  border-left-color: var(--vbe-black);
+}
+
+.exercise-card[data-status="3"],
+.exercise-card[data-status="2"] {
+  border-left-color: var(--vbe-red);
 }

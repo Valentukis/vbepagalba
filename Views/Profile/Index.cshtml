@@ -1,0 +1,142 @@
+@model VbeSort.Models.ProfileDashboardViewModel
+@{
+    ViewData["Title"] = "Mano profilis";
+    var u = Model.User;
+    var overallPct = Model.TotalExercisesInSystem > 0
+        ? (int)Math.Round((double)Model.SolvedUniqueCount / Model.TotalExercisesInSystem * 100.0)
+        : 0;
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4 pb-3 border-bottom">
+    <h1 class="h3 fw-bold mb-0">@u.EffectiveDisplayName</h1>
+    <a asp-controller="Home" asp-action="Practice" asp-route-mode="due" class="btn btn-sm btn-outline-primary">
+        Atidėtos pakartoti (@Model.DueReviewCount)
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="vbe-card p-3">
+            <div class="small text-muted">Išspręsta užduočių</div>
+            <div class="h4 fw-bold mb-0">@Model.SolvedUniqueCount / @Model.TotalExercisesInSystem (@overallPct%)</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="vbe-card p-3">
+            <div class="small text-muted">Atidėta pakartojimui</div>
+            <div class="h4 fw-bold mb-0">@Model.DueReviewCount</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="vbe-card p-3">
+            <div class="small text-muted">Bandomieji egzaminai</div>
+            <div class="h4 fw-bold mb-0">@Model.ExamHistory.Count</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="vbe-card overflow-hidden mb-4">
+            <div class="p-3 border-bottom">
+                <h2 class="h6 fw-bold mb-0">Progresas pagal temas</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tema</th>
+                            <th class="text-center">Išspręsta</th>
+                            <th class="w-50">Progresas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Model.TopicMasteries.OrderBy(x => x.TopicName))
+                        {
+                            var pct = m.TotalExercises > 0 ? (int)Math.Round((double)m.SolvedCount / m.TotalExercises * 100) : 0;
+                            <tr>
+                                <td>
+                                    <a asp-controller="Home" asp-action="Topic" asp-route-name="@m.TopicName" class="text-decoration-none fw-semibold">
+                                        @m.TopicName
+                                    </a>
+                                </td>
+                                <td class="text-center text-muted">@m.SolvedCount / @m.TotalExercises</td>
+                                <td>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar" style="width: @pct%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="vbe-card p-3 mb-4">
+            <h2 class="h6 fw-bold mb-2">Bandomųjų egzaminų istorija</h2>
+            @if (Model.ExamHistory.Any())
+            {
+                <div class="list-group list-group-flush small">
+                    @foreach (var ex in Model.ExamHistory.Take(8))
+                    {
+                        <div class="list-group-item px-0 py-2 bg-transparent d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">@ex.Title</div>
+                                <div class="text-muted">@ex.CompletedAtUtc.ToString("yyyy-MM-dd HH:mm") · @ex.SolvedCorrectly iš @ex.TotalQuestions užd.</div>
+                            </div>
+                            <span class="status-pill">@ex.ScorePercentage%</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="small text-muted mb-0">Nėra atliktų bandomųjų egzaminų.</p>
+            }
+        </div>
+
+        @if (Model.NotedExercises.Any())
+        {
+            <div class="vbe-card p-3 mb-4">
+                <h2 class="h6 fw-bold mb-2">Pastabos prie užduočių</h2>
+                <div class="list-group list-group-flush small">
+                    @foreach (var (ex, p) in Model.NotedExercises)
+                    {
+                        <div class="list-group-item px-0 py-2 bg-transparent">
+                            <div class="d-flex justify-content-between">
+                                <a asp-controller="Home" asp-action="Topic" asp-route-name="@ex.Topic" class="fw-semibold text-decoration-none">
+                                    @ex.Topic · @ex.Year m. #@ex.Number
+                                </a>
+                                <span class="text-muted">@p.UpdatedAtUtc.ToString("MM-dd")</span>
+                            </div>
+                            <div class="text-muted">@p.PersonalNote</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="vbe-card p-3">
+            <h2 class="h6 fw-bold mb-3">Pakeisti slaptažodį</h2>
+            <form asp-action="ChangePassword" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-2">
+                    <label class="form-label small mb-1" for="curPwdInput">Dabartinis slaptažodis</label>
+                    <input id="curPwdInput" name="CurrentPassword" type="password" class="form-control form-control-sm" required />
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small mb-1" for="newPwdInput">Naujas slaptažodis</label>
+                    <input id="newPwdInput" name="NewPassword" type="password" class="form-control form-control-sm" required minlength="4" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small mb-1" for="confirmPwdInput">Pakartokite naują slaptažodį</label>
+                    <input id="confirmPwdInput" name="ConfirmNewPassword" type="password" class="form-control form-control-sm" required minlength="4" />
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm w-100">Išsaugoti naują slaptažodį</button>
+            </form>
+        </div>
+    </div>
+</div>
