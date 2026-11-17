@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -37,7 +37,7 @@ public class HomeController : Controller
         var vm = new HomeIndexViewModel
         {
             Topics = topics,
-            TotalExercisesCount = _exerciseService.GetAllExercises().Count
+            TotalExercisesCount = topics.Sum(t => t.Exercises.Count)
         };
 
         var user = await ResolveCurrentUserAsync();
@@ -48,7 +48,7 @@ public class HomeController : Controller
             var masteries = _progressService.ComputeTopicMasteries(progressMap);
 
             vm.TopicMastery = masteries.ToDictionary(m => m.TopicName, StringComparer.OrdinalIgnoreCase);
-            vm.TotalSolvedCount = progressMap.Values.Count(p => p.Status == ExerciseStatus.Solved);
+            vm.TotalSolvedCount = masteries.Sum(m => m.SolvedCount);
             vm.DueForReviewCount = progressMap.Values.Count(p =>
                 p.Status == ExerciseStatus.NeedsReview || p.Status == ExerciseStatus.Hard);
         }
@@ -206,7 +206,7 @@ public class HomeController : Controller
             var session = parts.Length > 1 ? parts[1] : "pagr";
 
             var fullExercises = _exerciseService.GetExercisesByExamSession(year, session);
-            var sessLabel = session == "pagr" ? "pagrindinÄ—s sesijos" : "pakartotinÄ—s sesijos";
+            var sessLabel = session == "pagr" ? "pagrindinės sesijos" : "pakartotinės sesijos";
 
             return View(new MockExamViewModel
             {
@@ -223,7 +223,7 @@ public class HomeController : Controller
 
         if ((model.SelectedTopics == null || !model.SelectedTopics.Any()) && mode is "custom" or "unseen_only")
         {
-            ModelState.AddModelError("", "Pasirinkite bent vienÄ… temÄ….");
+            ModelState.AddModelError("", "Pasirinkite bent vieną temą.");
             model.AvailableTopics = topics.Select(t => t.Name).ToList();
             model.TopicDetails = topics;
             model.AvailableExamSessions = sessions;
@@ -246,8 +246,8 @@ public class HomeController : Controller
         if (exercises.Count == 0)
         {
             var errMsg = mode == "review_due"
-                ? "Neturite pakartojimui atidÄ—tÅ³ uÅ¾duoÄiÅ³. Pirmiausia temÅ³ puslapiuose paÅ¾ymÄ—kite uÅ¾duotis mygtuku â€žPakartoti vÄ—liauâ€œ."
-                : "Pagal pasirinktus kriterijus uÅ¾duoÄiÅ³ nerasta.";
+                ? "Neturite pakartojimui atidėtų užduočių. Pirmiausia temų puslapiuose pažymėkite užduotis mygtuku „Pakartoti vėliau“."
+                : "Pagal pasirinktus kriterijus užduočių nerasta.";
             ModelState.AddModelError("", errMsg);
             model.AvailableTopics = topics.Select(t => t.Name).ToList();
             model.TopicDetails = topics;
@@ -283,7 +283,7 @@ public class HomeController : Controller
         var pdfBytes = _examPdfService.BuildSessionExamPdf(year.Trim(), session.Trim());
         if (pdfBytes is null || pdfBytes.Length == 0)
         {
-            return NotFound("Å ios sesijos egzamino PDF nepavyko sugeneruoti.");
+            return NotFound("Šios sesijos egzamino PDF nepavyko sugeneruoti.");
         }
 
         Response.Headers.ContentDisposition = $"inline; filename=\"{year}_{session}_egzaminas.pdf\"";

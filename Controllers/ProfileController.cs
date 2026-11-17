@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -55,8 +55,8 @@ public class ProfileController : Controller
         var vm = new ProfileDashboardViewModel
         {
             User = user,
-            TotalExercisesInSystem = allExercises.Count,
-            SolvedUniqueCount = progressMap.Values.Count(p => p.Status == ExerciseStatus.Solved),
+            TotalExercisesInSystem = masteries.Sum(m => m.TotalExercises),
+            SolvedUniqueCount = masteries.Sum(m => m.SolvedCount),
             DueReviewCount = dueCount,
             TopicMasteries = masteries,
             ExamHistory = examHistory,
@@ -75,20 +75,20 @@ public class ProfileController : Controller
 
         if (!ModelState.IsValid)
         {
-            TempData["Error"] = "Naujas slaptaÅ¾odis turi bÅ«ti bent 4 simboliÅ³ ir sutapti su pakartojimu.";
+            TempData["Error"] = "Naujas slaptažodis turi būti bent 4 simbolių ir sutapti su pakartojimu.";
             return RedirectToAction(nameof(Index));
         }
 
         if (_hasher.VerifyHashedPassword(user, user.PasswordHash, model.CurrentPassword) == PasswordVerificationResult.Failed)
         {
-            TempData["Error"] = "Dabartinis slaptaÅ¾odis neteisingas.";
+            TempData["Error"] = "Dabartinis slaptažodis neteisingas.";
             return RedirectToAction(nameof(Index));
         }
 
         user.PasswordHash = _hasher.HashPassword(user, model.NewPassword);
         await _db.SaveChangesAsync();
 
-        TempData["Success"] = "SlaptaÅ¾odis sÄ—kmingai pakeistas.";
+        TempData["Success"] = "Slaptažodis sėkmingai pakeistas.";
         return RedirectToAction(nameof(Index));
     }
 
